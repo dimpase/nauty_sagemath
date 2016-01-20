@@ -77,4 +77,9 @@ runonetest "./geng -cd1f 10 | ./labelg -q" "" nautestb.ans
 runonetest "./genrang -r3 114 100 | ./countg --nedDr -q" "" nautestc.ans
 
 echo " "
-echo $fails tests failed
+
+if [ $fails -eq 0 ] ; then
+   echo "PASSED ALL TESTS"
+else
+   echo "$fails TESTS FAILED"
+fi

@@ -1,5 +1,5 @@
 /**************************************************************************
-*    This is the header file for Version 2.5 of nauty().                  *
+*    This is the header file for Version 2.6 of nauty().                  *
 *    @configure_input@
 **************************************************************************/
 
@@ -28,9 +28,12 @@ it is necessary to check they are correct.
 #define SIZEOF_INT @ac_cv_sizeof_int@
 #define SIZEOF_LONG @ac_cv_sizeof_long@
 #define SIZEOF_LONG_LONG @ac_cv_sizeof_long_long@   /* 0 if nonexistent */
+#define SIZEOF_INT128 @ac_cv_sizeof___int128_t@   /* 0 if nonexistent */
 
 #define HAVE_CONST @have_const@    /* compiler properly supports const */
 
+/* Note that the following is only for running nauty in multiple threads
+   and will slow it down a little otherwise. */
 #define HAVE_TLS @have_tls@   /* have storage attribute for thread-local */
 #define TLS_ATTR @ac_cv_tls@  /* if so, what it is.  if not, empty */
 
@@ -81,18 +84,17 @@ it is necessary to check they are correct.
 *    AUTHOR: Brendan D. McKay                                                *
 *            Research School of Computer Science                             *
 *            Australian National University                                  *
-*            Canberra, ACT 0200, Australia                                   *
-*            phone:  +61 2 6125 3845    fax:  +61 2 6125 0010                *
-*            email:  bdm@cs.anu.edu.au                                       *
+*            Canberra, ACT 2601, Australia                                   *
+*            phone:  +61 2 6125 3845                                         *
+*            email:  Brendan.McKay@anu.edu.au                                *
 *                                                                            *
-*   Nauty is copyright (1984-2013) Brendan McKay.  All rights reserved.      *
-*   Permission 
-*   is hereby given for use and/or distribution with the exception of        *
-*   sale for profit or application with nontrivial military significance.    *
-*   You must not remove this copyright notice, and you must document any     *
-*   changes that you make to this program.                                   *
-*   This software is subject to this copyright only, irrespective of         *
-*   any copyright attached to any package of which this is a part.           *
+*   Nauty is copyright (1984-2015) Brendan McKay.  All rights reserved.      *
+*   Permission is hereby given for the use, distribution and modification    *
+*   of this software subject to the following.                               *
+*   * You must not remove this section of the text, containing author        *
+*     attribution, copyright notice, and legal disclaimer.                   *
+*   * You must clearly mark modified versions of this software               *
+*     as differing from the original.                                        *
 *                                                                            *
 *   This program is only provided "as is".  No responsibility will be taken  *
 *   by the author, his employer or his pet rabbit* for any misfortune which  *
@@ -103,8 +105,10 @@ it is necessary to check they are correct.
 *                                                       * RIP, 1989          *
 *   Traces is copyright Adolfo Piperno (2011-).                              *
 *                                                                            *
+******************************************************************************
+*                                                                            *
 *   Reference manual:                                                        *
-*     B. D. McKay and A. Piperno, nauty User's Guide (Version 2.5),          *
+*     B. D. McKay and A. Piperno, nauty User's Guide (Version 2.6),          *
 *         http://pallini.di.uniroma1.it                                      *
 *         http://cs.anu.edu.au/~bdm/nauty/                                   *
 *                                                                            *
@@ -261,6 +265,11 @@ it is necessary to check they are correct.
 *       29-Aug-12 : - add CLZ macros and FIRSTBITNZ                          *
 *       19-Oct-12 : - add DEFAULT_WORDSIZE                                   *
 *        3-Jan-12 : Released 2.5rc1                                          *
+*       18-Jan-12 : Froze 2.5                                                *
+*       18-Jan-12 : - add NAUABORTED and NAUKILLED                           *
+*                   - add nauty_kill_request                                 *
+*                   - add usercanonproc                                      *
+*        1-Oct-15 : - add COUNTER_FMT_RAW                                    *
 *                                                                            *
 * @edit_msg@
 *                                                                            *
@@ -429,24 +438,26 @@ typedef unsigned long long setword;
 typedef unsigned long long nauty_counter;
 #define LONG_LONG_COUNTERS 1
 #define COUNTER_FMT "%llu"
+#define COUNTER_FMT_RAW "llu"
 #else
 typedef unsigned long nauty_counter;
 #define LONG_LONG_COUNTERS 0
 #define COUNTER_FMT "%lu"
+#define COUNTER_FMT_RAW "lu"
 #endif
 #define PRINT_COUNTER(f,x) fprintf(f,COUNTER_FMT,x)
 
-#define NAUTYVERSIONID (25490+HAVE_TLS)  /* 10000*version + HAVE_TLS */
+#define NAUTYVERSIONID (26000+HAVE_TLS)  /* 10000*version + HAVE_TLS */
 #define NAUTYREQUIRED NAUTYVERSIONID  /* Minimum compatible version */
 
 #if WORDSIZE==16
-#define NAUTYVERSION "2.5 (16 bits)"
+#define NAUTYVERSION "2.6 (16 bits)"
 #endif
 #if WORDSIZE==32
-#define NAUTYVERSION "2.5 (32 bits)"
+#define NAUTYVERSION "2.6 (32 bits)"
 #endif
 #if WORDSIZE==64
-#define NAUTYVERSION "2.5 (64 bits)"
+#define NAUTYVERSION "2.6 (64 bits)"
 #endif
 
 #ifndef  MAXN  /* maximum allowed n value; use 0 for dynamic sizing. */
@@ -810,9 +821,12 @@ typedef struct
 } statsblk;
 
 /* codes for errstatus field (see nauty.c for more accurate descriptions): */
+/* 0 is normal - no error */
 #define NTOOBIG      1      /* n > MAXN or n > WORDSIZE*m */
 #define MTOOBIG      2      /* m > MAXM */
 #define CANONGNIL    3      /* canong = NULL, but getcanon = TRUE */
+#define NAUABORTED   4      /* nauty is terminated early under program control */
+#define NAUKILLED    5      /* nauty is terminated early by caught signal */
 
 /* manipulation of real approximation to group size */
 #define MULTIPLY(s1,s2,i) if ((s1 *= i) >= 1e10) {s1 /= 1e10; s2 += 10;}
@@ -863,6 +877,8 @@ typedef struct optionstruct
          (int*,int*,int,int*,statsblk*,int,int,int,int,int,int);
     void (*usernodeproc)      /* procedure called for each node */
          (graph*,int*,int*,int,int,int,int,int,int);
+    int  (*usercanonproc)     /* procedure called for better labellings */
+         (graph*,int*,graph*,int,int,int,int);
     void (*invarproc)         /* procedure to compute vertex-invariant */
          (graph*,int*,int*,int,int,int,int*,int,boolean,int,int);
     int tc_level;             /* max level for smart target cell choosing */
@@ -892,13 +908,16 @@ typedef struct optionstruct
 
 #define DEFAULTOPTIONS_GRAPH(options) optionblk options = \
  {0,FALSE,FALSE,FALSE,TRUE,FALSE,CONSOLWIDTH, \
-  NULL,NULL,NULL,NULL,NULL,NULL,100,0,1,0,&dispatch_graph,FALSE,NULL}
+  NULL,NULL,NULL,NULL,NULL,NULL,NULL,100,0,1,0,&dispatch_graph,FALSE,NULL}
 #define DEFAULTOPTIONS_DIGRAPH(options) optionblk options = \
  {0,TRUE,FALSE,FALSE,TRUE,FALSE,CONSOLWIDTH, \
-  NULL,NULL,NULL,NULL,NULL,adjacencies,100,0,999,0,&dispatch_graph,FALSE,NULL}
+  NULL,NULL,NULL,NULL,NULL,NULL,adjacencies,100,0,999,0,&dispatch_graph,FALSE,NULL}
 
 #ifndef DEFAULTOPTIONS
 #define DEFAULTOPTIONS DEFAULTOPTIONS_GRAPH
+#endif
+#ifndef DEFAULTOPTIONS_DENSEGRAPH
+#define DEFAULTOPTIONS_DENSEGRAPH DEFAULTOPTIONS_GRAPH
 #endif
 
 #ifdef NAUTY_IN_MAGMA
@@ -962,8 +981,7 @@ extern void free(void*);
        ALLOCS(sz1,sz2*sizeof(type)).
 
    DYNREALLOC is like DYNALLOC1 except that the old contents are copied
-   into the new space.  realloc() is assumed.  This is not currently
-   used by nauty or dreadnaut.
+   into the new space. Availability of realloc() is assumed.
 
    DYNFREE frees any allocated array and sets name_sz back to 0.
    CONDYNFREE does the same, but only if name_sz exceeds some limit.
@@ -1005,6 +1023,7 @@ extern void free(void*);
 #endif
 
 extern int labelorg;   /* Declared in nautil.c */
+extern volatile int nauty_kill_request;  /* Also declared in nautil.c */
 
 #ifndef NAUTY_IN_MAGMA
   /* Things equivalent to bit, bytecount, leftbit are defined

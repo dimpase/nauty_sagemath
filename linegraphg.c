@@ -104,12 +104,11 @@ main(int argc, char *argv[])
     char *infilename,*outfilename;
     FILE *infile,*outfile;
     boolean badargs,quiet;
-    int j,m,n,argnum;
+    int j,argnum;
     int codetype,outcode;
     sparsegraph g,h;
     nauty_counter nin,nullgraphs;
     char *arg,sw;
-    static graph *gq;
     double t;
 
     HELP;
@@ -164,6 +163,8 @@ main(int argc, char *argv[])
     infile = opengraphfile(infilename,&codetype,FALSE,1);
     if (!infile) exit(1);
     if (!infilename) infilename = "stdin";
+
+    NODIGRAPHSYET(codetype);
 
     if (!outfilename || outfilename[0] == '-')
     {

@@ -62,6 +62,178 @@ degstats(graph *g, int m, int n, unsigned long *edges, int *mindeg,
     *eulerian = (dor & 1) == 0;
 }
 
+/**************************************************************************/
+
+void
+degstats2(graph *g, boolean digraph, int m, int n,
+     unsigned long *edges, int *loops,
+     int *minindeg, int *minincount, int *maxindeg, int *maxincount,
+     int *minoutdeg, int *minoutcount, int *maxoutdeg, int *maxoutcount,
+     boolean *eulerian)
+/* Compute degree-related graph properties.
+   *edges = number of edges (including loops), directed edges for digraphs
+   *loops = number of loops
+   *minindeg, *minincount = minimum in-degree and how many there are
+   *maxindeg, *maxincount = maximum in-degree and how many there are
+   *minoutdeg,*minoutcount,*maxoutdeg,*maxoutcount = similarly for out-degree
+   *eulerian = whether the undirected graph has only even degrees,
+               or the directed graph has indegree=outdegree at each vertex.
+   A loop contributes 2 to the degrees of an undirected graph and
+     1 to each degree for a directed graph.
+*/
+{
+    setword *pg;
+    int i,j,d,dor;
+    int mind,mindc,maxd,maxdc;
+    unsigned long ned;
+    int nloops;
+#if MAXN
+    int indeg[MAXN];
+    int outdeg[MAXN];
+#else
+    DYNALLSTAT(int,indeg,indeg_sz);
+    DYNALLSTAT(int,outdeg,outdeg_sz);
+#endif
+
+#if !MAXN
+    if (digraph)
+    {
+        DYNALLOC1(int,indeg,indeg_sz,n,"degstats2");
+        DYNALLOC1(int,outdeg,outdeg_sz,n,"degstats2");
+    }
+#endif
+
+    if (!digraph)
+    {
+        mind = n+2;
+        mindc = 0;
+        maxd = 0;
+        maxdc = 0;
+        ned = 0;
+        dor = 0;
+        nloops = 0;
+
+        pg = (setword*)g;
+        for (i = 0; i < n; ++i)
+        {
+            d = 0;
+	    if (ISELEMENT(pg,i))
+	    {
+		++d;
+		++nloops;
+	    }
+            for (j = 0; j < m; ++j, ++pg)
+                if (*pg) d += POPCOUNT(*pg);
+
+            if (d == mind)
+                ++mindc;
+            else if (d < mind)
+            {
+                mind = d;
+                mindc = 1;
+            }
+    
+            if (d == maxd)
+                ++maxdc;
+            else if (d > maxd)
+            {
+                maxd = d;
+                maxdc = 1;
+            }
+    
+            dor |= d;
+            ned += d;
+        }
+
+        *minindeg = *minoutdeg = mind;
+        *minincount = *minoutcount = mindc;
+        *maxindeg = *maxoutdeg = maxd;
+        *maxincount = *maxoutcount = maxdc;
+        *edges = ned / 2;
+        *eulerian = (dor & 1) == 0;
+        *loops = nloops;
+    }
+    else
+    {
+	for (i = 0; i < n; ++i) indeg[i] = outdeg[i] = 0;
+
+        nloops = 0;
+	ned = 0;
+	for (i = 0, pg = (setword*)g; i < n; ++i, pg += m)
+	{
+	    if (ISELEMENT(pg,i)) ++nloops;
+	    for (j = -1; (j = nextelement(pg,m,j)) >= 0;)
+	    {
+		++outdeg[i];
+		++indeg[j];
+	    }
+	    ned += outdeg[i];
+	}
+	*edges = ned;
+	*loops = nloops;
+
+        mind = maxd = indeg[0];
+        mindc = maxdc = 1;
+
+	for (i = 1; i < n; ++i)
+	{
+	    d = indeg[i];
+
+            if (d == mind)
+                ++mindc;
+            else if (d < mind)
+            {
+                mind = d;
+                mindc = 1;
+            }
+    
+            if (d == maxd)
+                ++maxdc;
+            else if (d > maxd)
+            {
+                maxd = d;
+                maxdc = 1;
+	    }
+	}
+	*minindeg = mind;
+        *minincount = mindc;
+	*maxindeg = maxd;
+        *maxincount = maxdc;
+
+        mind = maxd = outdeg[0];
+        mindc = maxdc = 1;
+
+	for (i = 1; i < n; ++i)
+	{
+	    d = outdeg[i];
+
+            if (d == mind)
+                ++mindc;
+            else if (d < mind)
+            {
+                mind = d;
+                mindc = 1;
+            }
+    
+            if (d == maxd)
+                ++maxdc;
+            else if (d > maxd)
+            {
+                maxd = d;
+                maxdc = 1;
+	    }
+	}
+	*minoutdeg = mind;
+        *minoutcount = mindc;
+	*maxoutdeg = maxd;
+        *maxoutcount = maxdc;
+
+	for (i = 0; i < n; ++i)
+	    if (indeg[i] != outdeg[i]) break;
+	*eulerian = (i == n);
+    }
+}
+
 /*********************************************************************/
 
 boolean
@@ -369,6 +541,37 @@ isbipartite(graph *g, int m, int n)
 /**************************************************************************/
 
 int
+bipartiteside(graph *g, int m, int n)
+/* If g is not bipartite, return 0.
+   Otherwise return the size of the smallest of the two parts of
+    some 2-coluring.  Note that this is not isomorphism-invariant
+    if g is disconnected. */
+{
+    boolean isbip;
+    int i,sz;
+#if MAXN
+    int colour[MAXN];
+#else
+    DYNALLSTAT(int,colour,colour_sz);
+#endif
+
+#if !MAXN
+    DYNALLOC1(int,colour,colour_sz,n,"isbipartite");
+#endif
+
+    isbip = twocolouring(g,colour,m,n);
+    if (!isbip) return 0;
+
+    sz = 0;
+    for (i = 0; i < n; ++i) sz += colour[i];
+
+    if (sz+sz <= n) return sz;
+    else            return n - sz;
+}
+
+/**************************************************************************/
+
+int
 girth(graph *g, int m, int n)
 /* Find the girth of graph g.  0 means acyclic. */
 {
@@ -600,12 +803,6 @@ long
 maxcliques(graph *g, int m, int n)
 /* Find the number of maximal cliques */
 {
-#if MAXN
-    set clique[MAXM],covers[MAXM];
-#else
-    DYNALLSTAT(set,clique,clique_sz);
-    DYNALLSTAT(set,covers,covers_sz);
-#endif
     int i;
     long ans;
 

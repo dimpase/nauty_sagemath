@@ -1,7 +1,7 @@
-/* gentourng.c  version 1.1; B D McKay, Nov 10, 2009. */
+/* gentourng.c  version 1.3; B D McKay, Jun 19, 2015 */
 
 #define USAGE \
-"gentourng [-cd#D#] [-ugs] [-lq] n [res/mod] [file]"
+"gentourng [-cd#D#] [-ugsz] [-lq] n [res/mod] [file]"
 
 #define HELPTEXT \
 " Generate all tournaments of a specified class.\n\
@@ -17,6 +17,7 @@
      -u    : do not output any graphs, just generate and count them\n\
      -g    : use graph6 output (lower triangle)\n\
      -s    : use sparse6 output (lower triangle)\n\
+     -z    : use digraph6 output\n\
      -h    : write a header (only with -g or -s)\n\
   Default output is upper triangle row-by-row in ascii\n\
 \n\
@@ -187,6 +188,7 @@ static void (*outproc)(FILE*,graph*,int);
 static FILE *outfile;           /* file for output graphs */
 static int connec;              /* 1 for -c, 0 for not */
 boolean graph6;                 /* presence of -g */
+boolean digraph6;               /* presence of -z */
 boolean sparse6;                /* presence of -s */
 boolean nooutput;               /* presence of -u */
 boolean canonise;               /* presence of -l */
@@ -356,6 +358,15 @@ writes6x(FILE *f, graph *g, int n)
 /* write graph g (n vertices) to file f in sparse6 format */
 {
 	writes6(f,g,1,n);
+}
+
+/************************************************************************/
+
+void
+writed6x(FILE *f, graph *g, int n)
+/* write graph g (n vertices) to file f in digraph6 format */
+{
+	writed6(f,g,1,n);
 }
 
 /***********************************************************************/
@@ -1216,24 +1227,23 @@ main(int argc, char *argv[])
         graph g[1];
         int deg[1];
 	int splitlevinc;
-	xword testxword;
         double t1,t2;
 	char msg[201];
 
 	HELP;
 	nauty_check(WORDSIZE,1,MAXN,NAUTYVERSIONID);
 
-	testxword = (xword)(-1);
-	if (MAXN > 32 || MAXN > WORDSIZE || MAXN > 8*sizeof(xword)
-	    || (MAXN == 8*sizeof(xword) && testxword < 0))
+	if (MAXN > 32 || MAXN > WORDSIZE || MAXN > 8*sizeof(xword))
 	{
-	    fprintf(stderr,"gentourng: incompatible MAXN, WORDSIZE, or xword\n");
+	    fprintf(stderr,
+		    "gentourng: incompatible MAXN, WORDSIZE, or xword\n");
 	    fprintf(stderr,"--See notes in program source\n");
 	    exit(1);
 	}
 
         badargs = FALSE;
 	graph6 = FALSE;
+	digraph6 = FALSE;
 	sparse6 = FALSE;
         nooutput = FALSE;
         canonise = FALSE;
@@ -1260,6 +1270,7 @@ main(int argc, char *argv[])
 		    sw = *arg++;
 		         SWBOOLEAN('u',nooutput)
 		    else SWBOOLEAN('g',graph6)
+		    else SWBOOLEAN('z',digraph6)
 		    else SWBOOLEAN('s',sparse6)
 		    else SWBOOLEAN('l',canonise)
 		    else SWBOOLEAN('h',header)
@@ -1348,8 +1359,8 @@ PLUGIN_SWITCHES
             exit(1);
         }
 
-	if ((graph6!=0) + (sparse6!=0) + (nooutput!=0) > 1)
-	    gt_abort(">E gentourng: -uyngs are incompatible\n");
+	if ((graph6!=0) + (sparse6!=0) + (digraph6!=0) + (nooutput!=0) > 1)
+	    gt_abort(">E gentourng: -ungzs are incompatible\n");
 
 #ifdef OUTPROC
         outproc = OUTPROC;
@@ -1357,6 +1368,7 @@ PLUGIN_SWITCHES
         if      (nooutput) outproc = nullwrite;
 	else if (sparse6)  outproc = writes6x;
         else if (graph6)   outproc = writeg6x;
+        else if (digraph6) outproc = writed6x;
 	else               outproc = write_ascii;
 #endif
 

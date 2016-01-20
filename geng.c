@@ -1,8 +1,9 @@
 /* TODO:  insert new timings
  *        add chordal graphs 
+ *        add perfect graphs
  *        add complements for ordinary graphs */
 
-/* geng.c  version 2.7; B D McKay, Jan 2013. */
+/* geng.c  version 2.8; B D McKay, Mar 2015. */
 
 #define USAGE \
 "geng [-cCmtfbd#D#] [-uygsnh] [-lvq] \n\
@@ -377,6 +378,7 @@ cost of a small increase in cpu time.
                              mixing of outputs in multi-process pipes.
               Sep 19, 2007 : Force -m for n > 28 regardless of word size.
               Nov 29, 2008 : Slightly improved connectivity testing.
+              Mar 3,  2015 : Improve maxdeg tweaking.
 
 **************************************************************************/
 
@@ -2084,7 +2086,7 @@ main(int argc, char *argv[])
 
     testxword = (xword)(-1);
     if (MAXN > 32 || MAXN > WORDSIZE || MAXN > 8*sizeof(xword)
-        || (MAXN == 8*sizeof(xword) && testxword < 0))
+        || (MAXN == 8*sizeof(xword) && testxword < 1))
     {
         fprintf(stderr,"geng: incompatible MAXN, WORDSIZE, or xword\n");
         fprintf(stderr,"--See notes in program source\n");
@@ -2225,6 +2227,7 @@ PLUGIN_SWITCHES
     if (maxdeg > maxe) maxdeg = maxe;
     if (mindeg < 0) mindeg = 0;
     if (mine < (maxn*mindeg+1) / 2) mine = (maxn*mindeg+1) / 2;
+    if (maxdeg > 2*maxe - mindeg*(maxn-1)) maxdeg = 2*maxe - mindeg*(maxn-1);
 
     if (!badargs && (mine > maxe || maxe < 0 || maxdeg < 0))
     {

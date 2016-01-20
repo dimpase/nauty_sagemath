@@ -1,6 +1,6 @@
 /*****************************************************************************
 *                                                                            *
-* miscellaneous utilities for use with nauty 2.5.                            *
+* miscellaneous utilities for use with nauty 2.6.                            *
 * None of these procedures are needed by nauty, but all are by dreadnaut.    *
 *                                                                            *
 *   Copyright (1984-2013) Brendan McKay.  All rights reserved.               *
@@ -72,6 +72,7 @@
 *       17-Mar-12 : move seed definition to naututil.h                       *
 *       20-Sep-12 : allow quoted strings in readstring()                     *
 *       20-Sep-12 : the first argument of ungetc is int, not char            *
+*        4-Mar-13 : remove a side-effect issue in setinter()                 *
 *                                                                            *
 *****************************************************************************/
 
@@ -135,7 +136,11 @@ setinter(set *set1, set *set2, int m)
 
     count = 0;
     for (i = m; --i >= 0;)
-        if ((x = (*set1++) & (*set2++)) != 0) count += POPCOUNT(x);
+    {
+        if ((x = (*set1 & *set2)) != 0) count += POPCOUNT(x);
+        ++set1;
+	++set2;
+    }
 
     return count;
 #endif
@@ -261,18 +266,18 @@ readstring(FILE *f, char *s, int slen)
 	c = getc(f);
 	while (c != '"' && c != '\n' && c != '\r' && c != EOF)
 	{
-	    if (s <= slim) *s++ = c;
+	    if (s <= slim) *s++ = (char)c;
             c = getc(f);
         }
 	if (c != '"' && c != EOF) ungetc(c,f);
     }
     else
     {
-        if (s <= slim) *s++ = c;
+        if (s <= slim) *s++ = (char)c;
         c = getc(f);
         while (c != ' ' && c != '\n' && c != '\t' && c != '\r' && c != EOF)
         {
-            if (s <= slim) *s++ = c;
+            if (s <= slim) *s++ = (char)c;
             c = getc(f);
         }
         if (c != EOF) ungetc(c,f);
@@ -836,7 +841,8 @@ readgraph_sg(FILE *f, sparsegraph *sg, boolean digraph, boolean prompt,
 *                                                                            *
 *  putgraph(f,g,linelength,m,n) writes a list of the edges of g to f         *
 *  using at most linelength characters per line (excluding '\n').            *
-*  A value of linelength <= 0 dictates no line breaks at all.                *
+*  A value of linelength <= 0 dictates no line breaks at all within the      *
+*    list for each vertex.                                                   *
 *  labelorg is used.                                                         *
 *                                                                            *
 *  FUNCTIONS CALLED: putset()                                                *
@@ -860,9 +866,10 @@ putgraph(FILE *f, graph *g, int linelength, int m, int n)
 
 /*****************************************************************************
 *                                                                            *
-*  putgraph_sg(f,sg,linelength,m,n) writes a list of the edges of g to f     *
+*  putgraph_sg(f,sg,linelength) writes a list of the edges of g to f         *
 *  using at most linelength characters per line (excluding '\n').            *
-*  A value of linelength <= 0 dictates no line breaks at all.                *
+*  A value of linelength <= 0 dictates no line breaks at all within the      *
+*    list for each vertex.                                                   *
 *  labelorg is used.                                                         *
 *                                                                            *
 *****************************************************************************/

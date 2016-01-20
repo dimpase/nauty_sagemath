@@ -1,4 +1,4 @@
-/* nausparse.h : header file for sparse digraphs, nauty 2.5 */
+/* nausparse.h : header file for sparse digraphs, nauty 2.6 */
 /* This version allows only simple graphs with loops but
  * contains the data structures for weights on the edges
  * even though they aren't implemented yet. */
@@ -15,6 +15,7 @@
 *        3-Jun-10 : add *_tr procedures used by Traces                       *
 *       30-Jun-10 : add DEFAULTOPTIONS_SPARSEDIGRAPH()                       *
 *       18-Aug-12 : fix SG_DECL initialization order                         *
+*       18-Jan-13 : add usercanonproc to default options                     *
 *                                                                            *
 *****************************************************************************/
 
@@ -56,10 +57,10 @@ typedef struct
 
 #define DEFAULTOPTIONS_SPARSEGRAPH(options) optionblk options = \
  {0,FALSE,FALSE,FALSE,TRUE,FALSE,CONSOLWIDTH, \
-  NULL,NULL,NULL,NULL,NULL,NULL,100,0,1,0,&dispatch_sparse,FALSE,NULL}
+  NULL,NULL,NULL,NULL,NULL,NULL,NULL,100,0,1,0,&dispatch_sparse,FALSE,NULL}
 #define DEFAULTOPTIONS_SPARSEDIGRAPH(options) optionblk options = \
  {0,TRUE,FALSE,FALSE,TRUE,FALSE,CONSOLWIDTH, \
-  NULL,NULL,NULL,NULL,NULL,adjacencies_sg,100,0,999,0,&dispatch_sparse,FALSE,NULL}
+  NULL,NULL,NULL,NULL,NULL,NULL,adjacencies_sg,100,0,999,0,&dispatch_sparse,FALSE,NULL}
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,13 +70,12 @@ extern dispatchvec dispatch_sparse;
 
 extern int targetcell_sg(graph*,int*,int*,int,int,boolean,int,int,int);
 extern boolean cheapautom_sg(int*,int,boolean,int);
-extern void distvals(sparsegraph*,int,int*,int);
 extern boolean isautom_sg(graph*,int*,boolean,int,int);
 extern void refine_sg(graph*,int*,int*,int,int*,int*,set*,int*,int,int);
 extern int testcanlab_sg(graph*,graph*,int*,int*,int,int);
 extern void updatecan_sg(graph*,graph*,int*,int,int,int);
 extern int testcanlab_tr(sparsegraph*,sparsegraph*,int*,int*,int*);
-extern int comparelab_tr(sparsegraph*,int*,int*,int*,int*);
+extern int comparelab_tr(sparsegraph*,int*,int*,int*,int*,int*,int*);
 extern void updatecan_tr(sparsegraph*,sparsegraph*,int*,int*,int);
 extern void init_sg(graph*,graph**,graph*,graph**,int*,int*,set*,
 	                   struct optionstruct*,int*,int,int);
@@ -88,12 +88,15 @@ extern void sortlists_sg(sparsegraph*);
 extern boolean aresame_sg(sparsegraph*,sparsegraph*);
 extern void put_sg(FILE*,sparsegraph*,boolean,int);
 extern sparsegraph *copy_sg(sparsegraph*,sparsegraph*);
+extern void distvals(sparsegraph*,int,int*,int);
 
 extern void sparsenauty(sparsegraph*g,int*,int*,int*,
                         optionblk*,statsblk*,sparsegraph*);
 
-extern void adjacencies_sg(graph*,int*,int*,int,int,int,int*,int,boolean,int,int);
-extern void distances_sg(graph*,int*,int*,int,int,int,int*,int,boolean,int,int);
+extern void
+   adjacencies_sg(graph*,int*,int*,int,int,int,int*,int,boolean,int,int);
+extern void
+   distances_sg(graph*,int*,int*,int,int,int,int*,int,boolean,int,int);
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,6 @@
 /*****************************************************************************
 *                                                                            *
-*  Sparse-graph-specific auxiliary source file for version 2.5 of nauty.     *
+*  Sparse-graph-specific auxiliary source file for version 2.6 of nauty.     *
 *                                                                            *
 *   Copyright (2004-2014) Brendan McKay.  All rights reserved.               *
 *   Subject to waivers and disclaimers in nauty.h.                           *
@@ -321,53 +321,60 @@ updatecan_sg(graph *g, graph *canong, int *lab, int samerows, int m, int n)
 
 /*****************************************************************************
 *                                                                            *
-*  comparelab_tr(g,lab1,invlab1,lab2,invlab2) compares g^lab1 to g^lab2      *
-*  and returns -1,0,1 according to the comparison.                           *
+*  comparelab_tr(g,lab1,invlab1,lab2,invlab2,cls,col) compares               *
+*  g^lab1 to g^lab2 and returns -1,0,1 according to the comparison.          *
 *  invlab1[] and invlab2[] are assumed to hold inverses of lab1,lab2.        *
 *                                                                            *
 *****************************************************************************/
 
 int
 comparelab_tr(sparsegraph *g,
-              int *lab1, int *invlab1, int *lab2, int *invlab2)
+       int *lab1, int *invlab1, int *lab2, int *invlab2, int *cls, int *col)
 {
     int d1,*e1,d2,*e2;
-    int i,j,k,n;
+    int i,j,k,n,c,end;
     int mina;
-
+    
     n = g->nv;
     PREPAREMARKS1(n);
-
-    for (i = 0; i < n; ++i)
+    
+    for (c=0; c<n; c+=cls[c])
     {
-	e1 = g->e + g->v[lab1[i]];
-	d1 = g->d[lab1[i]];
-	e2 = g->e + g->v[lab2[i]];
-	d2 = g->d[lab2[i]];
-	if (d1 < d2) return -1;
-        else if (d1 > d2) return 1;
-
-        RESETMARKS1;
-        mina = n;
-        for (j = 0; j < d1; ++j) MARK1(invlab1[e1[j]]);
-
-        for (j = 0; j < d1; ++j)
+        if (cls[c] == 1)
         {
-             k = invlab2[e2[j]];
-             if (ISMARKED1(k))  UNMARK1(k);
-             else if (k < mina) mina = k;
-        }
-        if (mina != n)
-        {
-            for (j = 0; j < d1; ++j)
+            end = c+cls[c];
+            for (i = c; i < end; ++i)
             {
-                k = invlab1[e1[j]];
-                if (ISMARKED1(k) && k < mina) return -1;
+                e1 = g->e + g->v[lab1[i]];
+                d1 = g->d[lab1[i]];
+                e2 = g->e + g->v[lab2[i]];
+                d2 = g->d[lab2[i]];
+                if (d1 < d2) return -1;
+                else if (d1 > d2) return 1;
+                
+                RESETMARKS1;
+                mina = n;
+                for (j = 0; j < d1; ++j) MARK1(col[invlab1[e1[j]]]);
+                
+                for (j = 0; j < d1; ++j)
+                {
+                    k = col[invlab2[e2[j]]];
+                    if (ISMARKED1(k))  UNMARK1(k);
+                    else if (k < mina) mina = k;
+                }
+                if (mina != n)
+                {
+                    for (j = 0; j < d1; ++j)
+                    {
+                        k = col[invlab1[e1[j]]];
+                        if (ISMARKED1(k) && k < mina) return -1;
+                    }
+                    return 1;
+                }
             }
-            return 1;
         }
     }
-
+    
     return 0;
 }
 
@@ -480,10 +487,13 @@ updatecan_tr(sparsegraph *g, sparsegraph *canong,
 
 #define SORT_OF_SORT 3
 #define SORT_NAME sortindirect
+#define SORT_TYPE1 int
+#define SORT_TYPE2 int
 #include "sorttemplates.c"
 
 #define SORT_OF_SORT 1
 #define SORT_NAME sortints
+#define SORT_TYPE1 int
 #include "sorttemplates.c"
 
 /*****************************************************************************
@@ -1090,7 +1100,7 @@ cheapautom_sg(int *ptn, int level, boolean digraph, int n)
         }
     }
 
-    return (k <= nnt + 1 || k <= 4);
+    return (k <= nnt + 1 || k <= 4); 
 }
 
 /*****************************************************************************

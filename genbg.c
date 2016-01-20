@@ -23,7 +23,7 @@
   -L    : there is no vertex in the first class whose removal leaves\n\
           the vertices in the second class unreachable from each other\n\
   -Z#   : two vertices in the second class may have at most # common nbrs\n\
-  -A    : no vertex in the second class has a neighbourhood with is a\n\
+  -A    : no vertex in the second class has a neighbourhood whith is a\n\
           subset of another vertex in the second class\n\
   -D#   : specify an upper bound for the maximum degree\n\
           Example: -D6.  You can also give separate maxima for the\n\
@@ -88,7 +88,7 @@ PRUNE feature.
    subgraph formed by deleting n1+n2-1 has previously been passed by the
    pruning function.
 
-   Note that either PRUNE1 nor PRUNE2 are called with n2=0, even if that
+   Note that neither PRUNE1 nor PRUNE2 are called with n2=0, even if that
    is the output level.
 
    If -c is specified, the connectivity test has NOT been performed yet
@@ -358,7 +358,7 @@ abcdefghijklmnopqrstuvwxyz!\"#$%&'()*-/:;<=>?@[\\]^_`{|}~";
     if (fputs(grestr,f) == EOF || ferror(f))
     {
         fprintf(stderr,">E genbg : error on writing file\n");
-        gt_abort("genbg");
+        gt_abort(NULL);
     }
 }
 

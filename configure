@@ -596,6 +596,7 @@ LIBOBJS
 edit_msg
 sort_newparams_ok
 sort_prog
+allow_interrupt
 have_ansicontrols
 default_wordsize
 have_tls
@@ -626,6 +627,7 @@ have_const
 testprogs
 lok
 MORECFLAGS
+ac_cv_sizeof___int128_t
 ac_cv_sizeof_long_long
 ac_cv_sizeof_long
 ac_cv_sizeof_int
@@ -711,6 +713,7 @@ enable_clz
 enable_tls
 enable_wordsize
 enable_ansicontrols
+enable_interrupt
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1338,6 +1341,7 @@ Optional Features:
   --enable-tls            Enable thread-local variables
   --enable-wordsize=value Override default WORDSIZE choice
   --enable-ansicontrols   Enable ANSI terminal control sequences
+  --disable-interrupt     Disable SIGINT catching in dreadnaut
 
 Some influential environment variables:
   CC          C compiler command
@@ -3520,10 +3524,10 @@ $as_echo "$ac_cv_try_cflags_ok" >&6; }
     fi;
     fi
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -O4 flags" >&5
-$as_echo_n "checking if $CC supports -O4 flags... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $CC supports -O4 -Werror flags" >&5
+$as_echo_n "checking if $CC supports -O4 -Werror flags... " >&6; }
     SAVE_CFLAGS="$CFLAGS"
-    CFLAGS="-O4"
+    CFLAGS="-O4 -Werror"
     if test "$cross_compiling" = yes; then :
   ac_cv_try_cflags_ok=no
 else
@@ -4907,6 +4911,41 @@ _ACEOF
 
 
 
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of __int128_t" >&5
+$as_echo_n "checking size of __int128_t... " >&6; }
+if test "${ac_cv_sizeof___int128_t+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (__int128_t))" "ac_cv_sizeof___int128_t"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type___int128_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+{ as_fn_set_status 77
+as_fn_error "cannot compute sizeof (__int128_t)
+See \`config.log' for more details." "$LINENO" 5; }; }
+   else
+     ac_cv_sizeof___int128_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof___int128_t" >&5
+$as_echo "$ac_cv_sizeof___int128_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF___INT128_T $ac_cv_sizeof___int128_t
+_ACEOF
+
+
+
 lok=0
 testprogs="dreadtest dreadtestS dreadtestS1 dreadtest4K"
 testprogs="$testprogs dreadtest1 dreadtestW dreadtestW1"
@@ -5612,6 +5651,20 @@ if test "x$enable_ansicontrols" = "xyes"; then :
   have_ansicontrols=1
 else
   have_ansicontrols=0
+fi
+
+
+# Check whether --enable-interrupt was given.
+if test "${enable_interrupt+set}" = set; then :
+  enableval=$enable_interrupt; intarg=given
+else
+  intarg=notgiven
+fi
+
+if test "x$intarg" = "xnotgiven" -o "x$enable_interrupt" = "xyes"; then :
+  allow_interrupt=1
+else
+  allow_interrupt=0
 fi
 
 

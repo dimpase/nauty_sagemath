@@ -1,4 +1,4 @@
-README file for nauty 2.5 
+README file for nauty 2.6 
 
 Brendan McKay, bdm@cs.anu.edu.au
 Adolfo Piperno, piperno@di.uniroma1.it
@@ -8,7 +8,7 @@ Adolfo Piperno, piperno@di.uniroma1.it
 The most recent distribution of nauty and Traces can be found at
 http://cs.anu.edu.au/~bdm/nauty and http://pallini.di.uniroma1.it .
 
-The manual nug25.pdf is available at that site and is also included
+The manual nug26.pdf is available at that site and is also included
 in the distribution package.
 
 Note that nauty and Traces are copyright but free to use for most
@@ -96,11 +96,6 @@ If configure gives an error message similar to this:
 then try
    ./configure --build=unknown
 
-If shortg gives an error something like "Input file
-given twice" it means that the Windows sort program is
-being found rather than the Cygwin sort program.  Usually
-this is a configuration error in Cygwin.
-
 ------------------------------------------------------------
 
 Making 32-bit executables on 64-bit Linux systems.
@@ -118,6 +113,7 @@ RECENT CHANGES.
 
 The big change in version 2.5 is the incorporation of Traces.
 
-See the file changes24-25.txt for a longer list.
+See the file changes24-26.txt for a longer list.
 
 See the file README_24 for a list of older changes.
+

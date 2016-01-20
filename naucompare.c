@@ -31,7 +31,9 @@ static char* special[] =   /* Make sure to use \n */
     ">Z %d graphs labelled from %s to %s in %*f sec.\n",
     "%d graphs altogether; cpu=%*f sec\n",
     "group time: %*f,%*f,%*f, order:%*f total:%*f "
-       "(Schreier fails: %d); exp_paths time:%*f; aut_check time:%*f\n"
+       "(Schreier fails: %d); exp_paths time:%*f; aut_check time:%*f\n",
+    "%d cell; code = %d; cpu time = %f seconds\n",
+    "%d cells; code = %d; cpu time = %f seconds\n"
 };
 #define NUMSPECIALS (sizeof(special)/sizeof(*special))
 

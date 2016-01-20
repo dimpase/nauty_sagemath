@@ -77,7 +77,7 @@ if test x"$user_cflags" = x"" -o x"$user_cflags" = x-m32 ; then
         AC_TRY_CFLAGS([-O2],[CFLAGS="$CFLAGS -O2"],[CFLAGS="$CFLAGS -O"]);
     fi
   else
-    AC_TRY_CFLAGS([-O4],[CFLAGS="$CFLAGS -O4"]);
+    AC_TRY_CFLAGS([-O4 -Werror],[CFLAGS="$CFLAGS -O4"]);
     if test x"$ac_cv_try_cflags_ok" = x"no"; then
        AC_TRY_CFLAGS([-O3],[CFLAGS="$CFLAGS -O3"]);
        if test x"$ac_cv_try_cflags_ok" = x"no"; then
@@ -212,12 +212,14 @@ AC_SUBST(has_math_inf)
 AC_MSG_RESULT($has_math_inf)
 
 dnl Checks for sizes of integer types; avoid 64-bit if necessary
-AC_CHECK_SIZEOF(int,4)
+AC_CHECK_SIZEOF([int],4)
 AC_SUBST(ac_cv_sizeof_int)
-AC_CHECK_SIZEOF(long,4)
+AC_CHECK_SIZEOF([long],4)
 AC_SUBST(ac_cv_sizeof_long)
-AC_CHECK_SIZEOF(long long,0)
+AC_CHECK_SIZEOF([long long],0)
 AC_SUBST(ac_cv_sizeof_long_long)
+AC_CHECK_SIZEOF([__int128_t],0)
+AC_SUBST(ac_cv_sizeof___int128_t)
 lok=0
 testprogs="dreadtest dreadtestS dreadtestS1 dreadtest4K"
 testprogs="$testprogs dreadtest1 dreadtestW dreadtestW1"
@@ -355,6 +357,12 @@ AC_ARG_ENABLE([ansicontrols],
    AS_HELP_STRING([--enable-ansicontrols], [Enable ANSI terminal control sequences]))
 AS_IF([test "x$enable_ansicontrols" = "xyes"],[have_ansicontrols=1],[have_ansicontrols=0])
 AC_SUBST(have_ansicontrols)
+
+dnl --disable-interrupt disables SIGINT catching in dreadnaut
+AC_ARG_ENABLE([interrupt],
+   AS_HELP_STRING([--disable-interrupt], [Disable SIGINT catching in dreadnaut]),[intarg=given],[intarg=notgiven])
+AS_IF([test "x$intarg" = "xnotgiven" -o "x$enable_interrupt" = "xyes"], [allow_interrupt=1],[allow_interrupt=0])
+AC_SUBST(allow_interrupt)
 
 case "$build" in
    *cygwin*)
